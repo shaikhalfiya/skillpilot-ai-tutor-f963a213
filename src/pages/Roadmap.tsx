@@ -6,7 +6,9 @@ import { RoadmapCard } from '@/components/RoadmapCard';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ChatInterface } from '@/components/ChatInterface';
 import { RoadmapData } from '@/types/skillpilot';
-import { generateRoadmap } from '@/lib/mockAI';
+import { generateRoadmap } from '@/lib/aiService';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function Roadmap() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ export default function Roadmap() {
   const [roadmap, setRoadmap] = useState<RoadmapData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [progressId, setProgressId] = useState<string | null>(null);
 
   useEffect(() => {
     const storedSkill = localStorage.getItem('skillpilot_skill');
@@ -34,40 +37,97 @@ export default function Roadmap() {
     try {
       const data = await generateRoadmap(skillName);
       setRoadmap(data);
+      
+      // Save progress to database
+      const { data: progressData, error: progressError } = await supabase
+        .from('learning_progress')
+        .insert({
+          skill: skillName,
+          total_steps: data.steps.length,
+          current_step: 0,
+          completed_steps: [],
+          roadmap_data: data as any,
+        })
+        .select()
+        .single();
+      
+      if (progressData) {
+        setProgressId(progressData.id);
+      }
+      if (progressError) {
+        console.error('Error saving progress:', progressError);
+      }
     } catch (err) {
-      setError('Failed to generate roadmap. Please try again.');
+      console.error('Roadmap generation error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate roadmap. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleToggleStepComplete = (stepId: number) => {
+  const handleToggleStepComplete = async (stepId: number) => {
     if (!roadmap) return;
+    
+    const updatedSteps = roadmap.steps.map(step =>
+      step.id === stepId ? { ...step, completed: !step.completed } : step
+    );
     
     setRoadmap({
       ...roadmap,
-      steps: roadmap.steps.map(step =>
-        step.id === stepId ? { ...step, completed: !step.completed } : step
-      ),
+      steps: updatedSteps,
     });
+
+    // Update database
+    const completedStepIds = updatedSteps.filter(s => s.completed).map(s => s.id);
+    
+    if (progressId) {
+      await supabase
+        .from('learning_progress')
+        .update({
+          completed_steps: completedStepIds,
+          current_step: completedStepIds.length,
+        })
+        .eq('id', progressId);
+    }
+    
+    const step = updatedSteps.find(s => s.id === stepId);
+    if (step?.completed) {
+      toast.success(`Completed: ${step.title}`);
+    }
   };
 
-  const handleToggleTask = (stepId: number, taskId: number) => {
+  const handleToggleTask = async (stepId: number, taskId: number) => {
     if (!roadmap) return;
+    
+    const updatedSteps = roadmap.steps.map(step =>
+      step.id === stepId
+        ? {
+            ...step,
+            tasks: step.tasks.map(task =>
+              task.id === taskId ? { ...task, completed: !task.completed } : task
+            ),
+          }
+        : step
+    );
     
     setRoadmap({
       ...roadmap,
-      steps: roadmap.steps.map(step =>
-        step.id === stepId
-          ? {
-              ...step,
-              tasks: step.tasks.map(task =>
-                task.id === taskId ? { ...task, completed: !task.completed } : task
-              ),
-            }
-          : step
-      ),
+      steps: updatedSteps,
     });
+
+    // Save completed task
+    const step = updatedSteps.find(s => s.id === stepId);
+    const task = step?.tasks.find(t => t.id === taskId);
+    
+    if (task?.completed && skill) {
+      await supabase
+        .from('completed_tasks')
+        .insert({
+          skill,
+          task_title: task.title,
+        });
+      toast.success(`Task completed: ${task.title}`);
+    }
   };
 
   const completedSteps = roadmap?.steps.filter(s => s.completed).length || 0;

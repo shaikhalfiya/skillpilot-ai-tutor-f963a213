@@ -14,7 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_history: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          role: string
+          skill: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          role: string
+          skill: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          role?: string
+          skill?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      completed_tasks: {
+        Row: {
+          completed_at: string
+          id: string
+          skill: string
+          task_title: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          skill: string
+          task_title: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          skill?: string
+          task_title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      learning_progress: {
+        Row: {
+          completed_steps: number[] | null
+          current_step: number | null
+          id: string
+          last_activity: string
+          roadmap_data: Json | null
+          skill: string
+          started_at: string
+          total_steps: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_steps?: number[] | null
+          current_step?: number | null
+          id?: string
+          last_activity?: string
+          roadmap_data?: Json | null
+          skill: string
+          started_at?: string
+          total_steps?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_steps?: number[] | null
+          current_step?: number | null
+          id?: string
+          last_activity?: string
+          roadmap_data?: Json | null
+          skill?: string
+          started_at?: string
+          total_steps?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

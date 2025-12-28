@@ -1,27 +1,36 @@
-import { BookOpen, Map, MessageCircle, Sparkles, Target, Zap, CheckCircle, ArrowRight } from 'lucide-react';
+import { BookOpen, Map, MessageCircle, Sparkles, Target, Zap, CheckCircle, ArrowRight, BarChart3 } from 'lucide-react';
 import { SearchBar } from '@/components/SearchBar';
 import { Header } from '@/components/Header';
+import { FeatureCard } from '@/components/FeatureCard';
 
 const features = [
   {
     icon: Map,
     title: 'Personalized Roadmaps',
     description: 'Get a clear learning path tailored to your goals and current skill level.',
+    link: '#search',
+    linkLabel: 'Create Roadmap',
   },
   {
     icon: BookOpen,
     title: 'Curated Free Resources',
     description: 'Access the best free tutorials, courses, and documentation for each topic.',
+    link: '#search',
+    linkLabel: 'Find Resources',
   },
   {
     icon: Target,
     title: 'Practice Tasks',
     description: 'Hands-on exercises and mini-projects to reinforce what you learn.',
+    link: '#search',
+    linkLabel: 'Start Practicing',
   },
   {
     icon: MessageCircle,
     title: 'AI Teacher Chat',
     description: 'Get instant help and explanations while you code, like having a teacher by your side.',
+    link: '#search',
+    linkLabel: 'Ask AI Teacher',
   },
 ];
 
@@ -56,7 +65,7 @@ export default function Index() {
             curated resources, and instant help - all in one place.
           </p>
 
-          <div className="animate-fade-up" style={{ animationDelay: '300ms' }}>
+          <div id="search" className="animate-fade-up" style={{ animationDelay: '300ms' }}>
             <SearchBar size="large" />
           </div>
 
@@ -88,18 +97,28 @@ export default function Index() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, i) => (
-            <div 
+            <FeatureCard
               key={i}
-              className="group p-6 rounded-xl bg-card border shadow-card hover:shadow-hover transition-all duration-300 animate-fade-up"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <feature.icon className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-              <p className="text-muted-foreground text-sm">{feature.description}</p>
-            </div>
+              icon={feature.icon}
+              title={feature.title}
+              description={feature.description}
+              link={feature.link}
+              linkLabel={feature.linkLabel}
+              index={i}
+            />
           ))}
+        </div>
+
+        {/* Dashboard CTA */}
+        <div className="mt-12 text-center animate-fade-up" style={{ animationDelay: '500ms' }}>
+          <a 
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
+          >
+            <BarChart3 className="h-4 w-4" />
+            View Your Learning Dashboard
+            <ArrowRight className="h-4 w-4" />
+          </a>
         </div>
       </section>
 

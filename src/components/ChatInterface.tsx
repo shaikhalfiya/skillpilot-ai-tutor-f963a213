@@ -3,8 +3,9 @@ import { Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatMessage } from '@/types/skillpilot';
-import { askAI } from '@/lib/mockAI';
+import { streamChat } from '@/lib/aiService';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface ChatInterfaceProps {
   skill: string;
@@ -43,29 +44,47 @@ export function ChatInterface({ skill }: ChatInterfaceProps) {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const userInput = input.trim();
     setInput('');
     setIsLoading(true);
 
-    try {
-      const response = await askAI(input, skill);
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
-      const errorMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: "I'm sorry, I encountered an error. Please try again!",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
+    // Create assistant message placeholder
+    const assistantMessageId = (Date.now() + 1).toString();
+    setMessages((prev) => [...prev, {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+    }]);
+
+    let assistantContent = '';
+
+    await streamChat({
+      messages: messages
+        .filter(m => m.id !== '1') // Exclude initial greeting
+        .map(m => ({ role: m.role, content: m.content }))
+        .concat([{ role: 'user', content: userInput }]),
+      skill,
+      onDelta: (text) => {
+        assistantContent += text;
+        setMessages((prev) => 
+          prev.map(m => 
+            m.id === assistantMessageId 
+              ? { ...m, content: assistantContent } 
+              : m
+          )
+        );
+      },
+      onDone: () => {
+        setIsLoading(false);
+      },
+      onError: (error) => {
+        setIsLoading(false);
+        toast.error(error);
+        // Remove empty assistant message
+        setMessages((prev) => prev.filter(m => m.id !== assistantMessageId));
+      },
+    });
   };
 
   const quickQuestions = [
@@ -142,7 +161,7 @@ export function ChatInterface({ skill }: ChatInterfaceProps) {
           </div>
         ))}
         
-        {isLoading && (
+        {isLoading && messages[messages.length - 1]?.content === '' && (
           <div className="flex gap-3 animate-fade-in">
             <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center">
               <Bot className="h-4 w-4 text-primary-foreground" />

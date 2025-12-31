@@ -228,6 +228,7 @@ export default function Roadmap() {
                     key={step.id}
                     step={step}
                     index={index}
+                    skill={roadmap.skill}
                     onToggleComplete={handleToggleStepComplete}
                     onToggleTask={handleToggleTask}
                   />

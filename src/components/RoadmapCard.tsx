@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Check, ChevronDown, ChevronUp, ExternalLink, Clock, BookOpen, Code } from 'lucide-react';
 import { RoadmapStep, Resource, Task } from '@/types/skillpilot';
 import { Button } from '@/components/ui/button';
+import { MCQQuiz } from '@/components/MCQQuiz';
 import { cn } from '@/lib/utils';
 
 interface RoadmapCardProps {
   step: RoadmapStep;
   index: number;
+  skill: string;
   onToggleComplete: (stepId: number) => void;
   onToggleTask: (stepId: number, taskId: number) => void;
 }
@@ -24,7 +26,7 @@ const difficultyColor: Record<Task['difficulty'], string> = {
   advanced: 'bg-red-100 text-red-700',
 };
 
-export function RoadmapCard({ step, index, onToggleComplete, onToggleTask }: RoadmapCardProps) {
+export function RoadmapCard({ step, index, skill, onToggleComplete, onToggleTask }: RoadmapCardProps) {
   const [isExpanded, setIsExpanded] = useState(index === 0);
 
   const completedTasks = step.tasks.filter(t => t.completed).length;
@@ -176,6 +178,9 @@ export function RoadmapCard({ step, index, onToggleComplete, onToggleTask }: Roa
                 ))}
               </div>
             </div>
+
+            {/* MCQ Quiz */}
+            <MCQQuiz concept={step.title} skill={skill} />
 
             {/* Mark Complete Button */}
             <Button

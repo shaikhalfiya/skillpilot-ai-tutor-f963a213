@@ -11,12 +11,14 @@ import {
   Play,
   Calendar,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Trash2
 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface LearningProgress {
   id: string;
@@ -94,6 +96,23 @@ export default function Dashboard() {
     navigate('/roadmap');
   };
 
+  const clearDashboard = async () => {
+    if (!confirm('Are you sure you want to clear all your learning progress and completed tasks?')) {
+      return;
+    }
+    
+    try {
+      await supabase.from('learning_progress').delete().neq('id', '');
+      await supabase.from('completed_tasks').delete().neq('id', '');
+      setLearningProgress([]);
+      setCompletedTasks([]);
+      toast.success('Dashboard cleared successfully!');
+    } catch (error) {
+      console.error('Error clearing dashboard:', error);
+      toast.error('Failed to clear dashboard');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -144,13 +163,26 @@ export default function Dashboard() {
                 <Play className="h-5 w-5 text-primary" />
                 Active Learning Paths
               </h2>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate('/')}
-              >
-                Start New
-              </Button>
+              <div className="flex gap-2">
+                {(learningProgress.length > 0 || completedTasks.length > 0) && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={clearDashboard}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Clear All
+                  </Button>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/')}
+                >
+                  Start New
+                </Button>
+              </div>
             </div>
 
             {isLoading ? (
